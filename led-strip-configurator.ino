@@ -31,7 +31,7 @@ void setup()
     server.on("/", handle_OnConnect);
     server.on("/color", handle_color);
     server.on("/led_off", handle_led_off);
-    server.onNotFound(handle_NotFound);
+    server.onNotFound(handle_not_found);
 
     server.begin();
     Serial.println("HTTP server started");
@@ -61,7 +61,6 @@ void handle_color()
     B = b.toInt();
 
     server.send(200, "text/html", SendHTML());
-
     Serial.println("Updated RGB values");
 }
 
@@ -72,7 +71,7 @@ void handle_led_off()
     server.send(200, "text/html", SendHTML());
 }
 
-void handle_NotFound()
+void handle_not_found()
 {
     server.send(404, "text/plain", "Not found");
     Serial.println("Error: 404");
