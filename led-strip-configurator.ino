@@ -1,9 +1,11 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <DNSServer.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+#include <FS.h>          // Include the SPIFFS library
 
 ESP8266WebServer server(80);
+
+bool handle_file_read(String path);
 
 uint8_t R, G, B;
 
@@ -28,10 +30,12 @@ void setup()
         delay(5000);
     }
 
-    server.on("/", handle_OnConnect);
-    server.on("/color", handle_color);
-    server.on("/led_off", handle_led_off);
-    server.onNotFound(handle_not_found);
+    SPIFFS.begin(); // Start the SPI Flash Files System
+
+    server.onNotFound([]() {                                  // If the client requests any URI
+        if (!handle_file_read(server.uri()))                  // send it if it exists
+            server.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
+    });
 
     server.begin();
     Serial.println("HTTP server started");
@@ -45,43 +49,68 @@ void loop()
     analogWrite(B_pin, B * 4);
 }
 
-void handle_OnConnect()
-{
-    server.send(200, "text/html", SendHTML());
+// void handle_color()
+// {
+//     String r = server.arg("r");
+//     String g = server.arg("g");
+//     String b = server.arg("b");
+
+//     R = r.toInt();
+//     G = g.toInt();
+//     B = b.toInt();
+
+//     server.send(200, "text/html", SendHTML());
+//     Serial.println("Updated RGB values");
+// }
+
+// void handle_led_off()
+// {
+//     R, G, B = 0;
+//     Serial.println("LEDs turned off");
+//     server.send(200, "text/html", SendHTML());
+// }
+
+String getContentType(String filename)
+{ // convert the file extension to the MIME type
+    if (filename.endsWith(".html"))
+    {
+        return "text/html";
+    }
+    else if (filename.endsWith(".css"))
+    {
+        return "text/css";
+    }
+    else if (filename.endsWith(".js"))
+    {
+        return "application/javascript";
+    }
+    else if (filename.endsWith(".ico"))
+    {
+        return "image/x-icon";
+    }
+    return "text/plain";
 }
 
-void handle_color()
-{
-    String r = server.arg("r");
-    String g = server.arg("g");
-    String b = server.arg("b");
+bool handle_file_read(String path)
+{ // send the right file to the client (if it exists)
+    Serial.println("handleFileRead: " + path);
 
-    R = r.toInt();
-    G = g.toInt();
-    B = b.toInt();
+    if (path.endsWith("/"))
+    {
+        path += "index.html"; // If a folder is requested, send the index file
+    }
 
-    server.send(200, "text/html", SendHTML());
-    Serial.println("Updated RGB values");
-}
+    String contentType = getContentType(path); // Get the MIME type
 
-void handle_led_off()
-{
-    R, G, B = 0;
-    Serial.println("LEDs turned off");
-    server.send(200, "text/html", SendHTML());
-}
+    if (SPIFFS.exists(path))
+    {                                                       // If the file exists
+        File file = SPIFFS.open(path, "r");                 // Open it
+        size_t sent = server.streamFile(file, contentType); // And send it to the client
+        file.close();                                       // Then close the file again
+        return true;
+    }
 
-void handle_not_found()
-{
-    server.send(404, "text/plain", "Not found");
-    Serial.println("Error: 404");
-}
+    Serial.println("\tFile Not Found");
 
-String SendHTML()
-{
-    // When the index.html file is edited, minify it via https://www.willpeavy.com/tools/minifier/
-    // Escape the string via https://www.freeformatter.com/json-escape.html
-    // 'ctrl + h' replace \/ with /
-    // And paste it here
-    return F("<!DOCTYPE html><html lang=\"en\"><head> <style>.c{display: block; margin-top: 25px; margin-left: auto; margin-right: auto; width: 300px; position: relative;}.b{margin-top: 25px;}</style> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"> <title>Color picker</title> <script src=\"https://cdn.jsdelivr.net/npm/@jaames/iro\"></script> <link href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css\" rel=\"stylesheet\"></head><body> <div class=\"container-sm\"> <div class=\"c\" id=\"cW\"> </div></div><div class=\"container-sm\"> <form action=\"/led_off\" method=\"POST\"> <div class=\"b\"> <input type=\"submit\" class=\"btn btn-primary btn-lg btn-block\" value=\"Turn LED\'s off\"></input> </div></form> </div><script>var colorWheel=new iro.ColorPicker(\"#cW\",{layout: [{component: iro.ui.Wheel,},{component: iro.ui.Slider,}]}); colorWheel.on(\'input:change\', function (color){console.log(colorWheel.color.rgb);}); colorWheel.on(\'mount\', function (color){}); </script></body></html>");
+    return false; // If the file doesn't exist, return false
 }
