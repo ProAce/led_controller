@@ -33,15 +33,15 @@
     </div>
 
     <div class="container-sm">
-        <form action="/toggle" method="POST">
-            <div class="b">
-                <input type="submit" class="btn btn-primary btn-lg btn-block" value="Turn LED's off"></input>
-            </div>
-        </form>
+        <div class="b">
+            <button onclick="send_color({r:0, g:0, b:0})" class="btn btn-primary btn-lg btn-block">
+                Turn LED's off
+            </button>
+        </div>
     </div>
 
     <script>
-        var colorWheel = new iro.ColorPicker("#cW", {
+        var cW = new iro.ColorPicker("#cW", {
             layout: [
                 {
                     component: iro.ui.Wheel,
@@ -52,12 +52,33 @@
             ]
         });
 
-        colorWheel.on('input:change', function (color) {
-            console.log(colorWheel.color.rgb);
+        fetch('/led').then((resp) => resp.json()).then((data) => {
+            console.log(data);
+            cW.color.rgb = data;
         });
 
-        colorWheel.on('mount', function (color) {
+        function send_color(color) {
+            fetch('/led', {
+                method: 'POST',
+                body: JSON.stringify(color),
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+        };
+
+        cW.on('input:change', function (color) {
+            var color = cW.color.rgb;
+
+            send_color(color)
+            console.log(color);
         });
+
+        cW.on('mount', function (color) {
+        });
+
+
     </script>
 </body>
 

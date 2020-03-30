@@ -2,12 +2,15 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <FS.h>          // Include the SPIFFS library
+#include <ArduinoOTA.h>
+#include <ArduinoJson.h>
 
 ESP8266WebServer server(80);
 
 bool handle_file_read(String path);
+String get_content_type(String filename);
 
-uint8_t R, G, B;
+uint8_t R, G, B = 5;
 
 #define R_pin 1
 #define G_pin 1
@@ -16,6 +19,9 @@ uint8_t R, G, B;
 void setup()
 {
     Serial.begin(115200);
+    delay(10);
+
+    Serial.println("Connecting to wifi");
 
     //WiFiManager intialisation. Once completed there is no need to repeat the process on the current board
     WiFiManager wifiManager;
@@ -37,40 +43,62 @@ void setup()
             server.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
     });
 
+    server.on("/led", HTTP_POST, handle_led_post);
+    server.on("/led", HTTP_GET, handle_led_get);
+
     server.begin();
-    Serial.println("HTTP server started");
+
+    ArduinoOTA.setHostname("LED_controller");
+    ArduinoOTA.setPassword("password");
+
+    pinMode(R_pin, OUTPUT);
+    pinMode(G_pin, OUTPUT);
+    pinMode(B_pin, OUTPUT);
+
+    ArduinoOTA.begin();
 }
+
 void loop()
 {
+    ArduinoOTA.handle();
     server.handleClient();
 
     analogWrite(R_pin, R * 4);
     analogWrite(G_pin, G * 4);
     analogWrite(B_pin, B * 4);
+
+    yield();
 }
 
-// void handle_color()
-// {
-//     String r = server.arg("r");
-//     String g = server.arg("g");
-//     String b = server.arg("b");
+void handle_led_post()
+{
+    String json = server.arg("plain");
+    DynamicJsonDocument doc(60);
 
-//     R = r.toInt();
-//     G = g.toInt();
-//     B = b.toInt();
+    deserializeJson(doc, json);
 
-//     server.send(200, "text/html", SendHTML());
-//     Serial.println("Updated RGB values");
-// }
+    R = doc["r"];
+    G = doc["g"];
+    B = doc["b"];
 
-// void handle_led_off()
-// {
-//     R, G, B = 0;
-//     Serial.println("LEDs turned off");
-//     server.send(200, "text/html", SendHTML());
-// }
+    server.send(202);
+}
 
-String getContentType(String filename)
+void handle_led_get()
+{
+    String JSON;
+    DynamicJsonDocument doc(60);
+
+    doc["r"] = R;
+    doc["g"] = G;
+    doc["b"] = B;
+
+    serializeJson(doc, JSON);
+
+    server.send(200, "application/json", JSON);
+}
+
+String get_content_type(String filename)
 { // convert the file extension to the MIME type
     if (filename.endsWith(".html"))
     {
@@ -93,14 +121,12 @@ String getContentType(String filename)
 
 bool handle_file_read(String path)
 { // send the right file to the client (if it exists)
-    Serial.println("handleFileRead: " + path);
-
     if (path.endsWith("/"))
     {
         path += "index.html"; // If a folder is requested, send the index file
     }
 
-    String contentType = getContentType(path); // Get the MIME type
+    String contentType = get_content_type(path); // Get the MIME type
 
     if (SPIFFS.exists(path))
     {                                                       // If the file exists
@@ -109,8 +135,6 @@ bool handle_file_read(String path)
         file.close();                                       // Then close the file again
         return true;
     }
-
-    Serial.println("\tFile Not Found");
 
     return false; // If the file doesn't exist, return false
 }
