@@ -79,5 +79,9 @@ void handle_not_found()
 
 String SendHTML()
 {
+    // When the index.html file is edited, minify it via https://www.willpeavy.com/tools/minifier/
+    // Escape the string via https://www.freeformatter.com/json-escape.html
+    // 'ctrl + h' replace \/ with /
+    // And paste it here
     return F("<!DOCTYPE html><html lang=\"en\"><head> <style>.c{display: block; margin-top: 25px; margin-left: auto; margin-right: auto; width: 300px; position: relative;}.b{margin-top: 25px;}</style> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"> <title>Color picker</title> <script src=\"https://cdn.jsdelivr.net/npm/@jaames/iro\"></script> <link href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css\" rel=\"stylesheet\"></head><body> <div class=\"container-sm\"> <div class=\"c\" id=\"cW\"> </div></div><div class=\"container-sm\"> <form action=\"/led_off\" method=\"POST\"> <div class=\"b\"> <input type=\"submit\" class=\"btn btn-primary btn-lg btn-block\" value=\"Turn LED\'s off\"></input> </div></form> </div><script>var colorWheel=new iro.ColorPicker(\"#cW\",{layout: [{component: iro.ui.Wheel,},{component: iro.ui.Slider,}]}); colorWheel.on(\'input:change\', function (color){console.log(colorWheel.color.rgb);}); colorWheel.on(\'mount\', function (color){}); </script></body></html>");
 }
