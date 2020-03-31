@@ -10,7 +10,9 @@ ESP8266WebServer server(80);
 bool handle_file_read(String path);
 String get_content_type(String filename);
 
-uint8_t R, G, B = 5;
+uint8_t R = 255;
+uint8_t G = 255;
+uint8_t B = 255;
 
 #define R_pin 1
 #define G_pin 1
