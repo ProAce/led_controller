@@ -1,85 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <style>
-        .c {
-            display: block;
-            margin-top: 25px;
-            margin-left: auto;
-            margin-right: auto;
-            width: 300px;
-            position: relative;
-        }
-
-        .b {
-            margin-top: 25px;
-        }
-    </style>
-
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
 
     <title>Color picker</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/@jaames/iro"></script>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
-</head>
+    <script src="iro.min.js"></script>
+    <link href="led_controller.css" rel="stylesheet" />
+  </head>
 
-<body>
-    <div class="container-sm">
-        <div class="c" id="cW">
-        </div>
+  <body>
+    <div class="c" id="cW"></div>
+
+    <div class="c">
+      <button onclick="send_color({r:0, g:0, b:0})" class="btn">
+        Turn LED's off
+      </button>
     </div>
 
-    <div class="container-sm">
-        <div class="b">
-            <button onclick="send_color({r:0, g:0, b:0})" class="btn btn-primary btn-lg btn-block">
-                Turn LED's off
-            </button>
-        </div>
-    </div>
-
-    <script>
-        var cW = new iro.ColorPicker("#cW", {
-            layout: [
-                {
-                    component: iro.ui.Wheel,
-                },
-                {
-                    component: iro.ui.Slider,
-                }
-            ]
-        });
-
-        fetch('/led').then((resp) => resp.json()).then((data) => {
-            console.log(data);
-            cW.color.rgb = data;
-        });
-
-        function send_color(color) {
-            fetch('/led', {
-                method: 'POST',
-                body: JSON.stringify(color),
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            });
-        };
-
-        cW.on('input:change', function (color) {
-            var color = cW.color.rgb;
-
-            send_color(color)
-            console.log(color);
-        });
-
-        cW.on('mount', function (color) {
-        });
-
-
-    </script>
-</body>
-
+    <script src="led_controller.js"></script>
+  </body>
 </html>
