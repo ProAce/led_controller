@@ -1,9 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
-#include <FS.h>          // Include the SPIFFS library
-#include <ArduinoOTA.h>
-#include <ArduinoJson.h>
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager.
+#include <FS.h>          // Include the SPIFFS library.
+#include <ArduinoOTA.h>  // Include the OTA firmware updater library.
+#include <ArduinoJson.h> // Include the Arduino JSON parser library.
 
 ESP8266WebServer server(80);
 
@@ -23,11 +23,11 @@ void setup()
 
     Serial.println("Connecting to wifi");
 
-    //WiFiManager intialisation. Once completed there is no need to repeat the process on the current board
+    //WiFiManager intialisation. Once completed there is no need to repeat the process on the current board.
     WiFiManager wifiManager;
-    // Restart the ESP8266 and connect your PC to the wireless access point called 'LED Controller' then connect to http://192.168.4.1/ and follow instructions to make the WiFi connection
+    // Restart the ESP8266 and connect your PC to the wireless access point called 'LED Controller' then connect to http://192.168.4.1/ and follow instructions to make the WiFi connection.
     wifiManager.setTimeout(180);
-    // Fetches ssid and password and tries to connect, if connections succeeds it starts an access point with the name called "LED Controller" and waits in a blocking loop for configuration
+    // Fetches ssid and password and tries to connect, if connections succeeds it starts an access point with the name called "LED Controller" and waits in a blocking loop for configuration.
     if (!wifiManager.autoConnect("LED Controller"))
     {
         Serial.println("Failed to connect and timeout occurred");
@@ -36,11 +36,11 @@ void setup()
         delay(5000);
     }
 
-    SPIFFS.begin(); // Start the SPI Flash Files System
+    SPIFFS.begin(); // Start the SPI Flash Files System.
 
-    server.onNotFound([]() {                                  // If the client requests any URI
-        if (!handle_file_read(server.uri()))                  // send it if it exists
-            server.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error
+    server.onNotFound([]() {                                  // If the client requests any URI.
+        if (!handle_file_read(server.uri()))                  // send it if it exists.
+            server.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error.
     });
 
     server.on("/led", HTTP_POST, handle_led_post);
@@ -99,7 +99,7 @@ void handle_led_get()
 }
 
 String get_content_type(String filename)
-{ // convert the file extension to the MIME type
+{ // Convert the file extension to the correct MIME type.
     if (filename.endsWith(".html"))
     {
         return "text/html";
@@ -120,21 +120,21 @@ String get_content_type(String filename)
 }
 
 bool handle_file_read(String path)
-{ // send the right file to the client (if it exists)
+{ // Send the correct file to the client (if it exists).
     if (path.endsWith("/"))
     {
-        path += "index.html"; // If a folder is requested, send the index file
+        path += "index.html"; // If a folder is requested, send the index file.
     }
 
-    String contentType = get_content_type(path); // Get the MIME type
+    String contentType = get_content_type(path); // Get the MIME type.
 
     if (SPIFFS.exists(path))
-    {                                                       // If the file exists
-        File file = SPIFFS.open(path, "r");                 // Open it
-        size_t sent = server.streamFile(file, contentType); // And send it to the client
-        file.close();                                       // Then close the file again
+    {                                                       // If the file exists.
+        File file = SPIFFS.open(path, "r");                 // Open it.
+        size_t sent = server.streamFile(file, contentType); // And send it to the client.
+        file.close();                                       // Then close the file again.
         return true;
     }
 
-    return false; // If the file doesn't exist, return false
+    return false; // If the file doesn't exist, return false.
 }
