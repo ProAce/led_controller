@@ -27,6 +27,18 @@ function send_color(color) {
   });
 }
 
+function leds_off()
+{
+  cW.color.rgb = {"r":0, "g":0, "b":0};
+  send_color(cW.color.rgb);
+}
+
+function leds_on()
+{
+  cW.color.rgb = {"r":255, "g":255, "b":255};
+  send_color(cW.color.rgb);
+}
+
 cW.on("input:change", function(color) {
   var color = cW.color.rgb;
 
