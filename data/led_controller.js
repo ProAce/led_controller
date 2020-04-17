@@ -39,7 +39,7 @@ function leds_on()
   send_color(cW.color.rgb);
 }
 
-cW.on("input:change", function(color) {
+cW.on("input:end", function(color) {
   var color = cW.color.rgb;
 
   send_color(color);
