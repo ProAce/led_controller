@@ -80,11 +80,11 @@ void onEventsCallback(WebsocketsEvent event, String data)
   switch (event)
   {
   case WebsocketsEvent::ConnectionOpened:
-    Serial.println("Connnection Opened");
+    // Serial.println("Connnection Opened");
     break;
 
   case WebsocketsEvent::ConnectionClosed:
-    Serial.println("Connnection Closed");
+    // Serial.println("Connnection Closed");
     client.close();
     break;
   }
@@ -92,8 +92,8 @@ void onEventsCallback(WebsocketsEvent event, String data)
 
 void onMessageCallback(WebsocketsMessage message)
 {
-  Serial.print("Got Message: ");
-  Serial.println(message.data());
+  // Serial.print("Got Message: ");
+  // Serial.println(message.data());
 
   String data = message.data();
 

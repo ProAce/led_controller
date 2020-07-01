@@ -28,7 +28,7 @@ cW.on("color:change", function (color) {
   var color = cW.color.rgb;
 
   send_color(color);
-  console.log(color);
+  // console.log(color);
 });
 
 cW.on("mount", function (color) {});
@@ -38,7 +38,7 @@ socket.addEventListener("open", function (event) {
 });
 
 socket.addEventListener("message", function (event) {
-  console.log("Message from server ", event.data);
+  // console.log("Message from server ", event.data);
 
   var splitData = event.data.split(",");
 
@@ -46,9 +46,7 @@ socket.addEventListener("message", function (event) {
     splitData[0] // Parse the incoming messages
   ) {
     case "c":
-      cW.color.r = splitData[1];
-      cW.color.g = splitData[2];
-      cW.color.b = splitData[3];
+      cW.color.rgb = {r: splitData[1], g: splitData[2], b: splitData[3]};
       break;
   }
 });
