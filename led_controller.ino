@@ -1,30 +1,31 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <FS.h>          // Include the SPIFFS library.
-#include <ArduinoJson.h> // Include the Arduino JSON parser library.
+#include <ArduinoWebsockets.h>
+#include <FS.h>
 
 const char *ssid = "";      // The SSID (name) of the Wi-Fi network you want to connect to
 const char *password = "!"; // The password of the Wi-Fi network
 
+using namespace websockets;
+
+WebsocketsServer wsServer;
+WebsocketsClient client;
 ESP8266WebServer server(80);
 
-bool handle_file_read(String path);
-String get_content_type(String filename);
+uint8_t R = 0;
+uint8_t G = 0;
+uint8_t B = 0;
 
-uint8_t R = 255;
-uint8_t G = 255;
-uint8_t B = 255;
-
-#define R_pin D7
-#define G_pin D6
-#define B_pin D5
+#define R_pin 13
+#define G_pin 12
+#define B_pin 14
 
 void setup()
 {
   Serial.begin(115200);
-  delay(10);
 
   WiFi.begin(ssid, password); // Connect to the network
+
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
@@ -45,53 +46,74 @@ void setup()
       server.send(404, "text/plain", "404: Not Found"); // otherwise, respond with a 404 (Not Found) error.
   });
 
-  server.on("/led", HTTP_POST, handle_led_post);
-  server.on("/led", HTTP_GET, handle_led_get);
-
   server.begin();
+
+  // start the Websocket server on port 8080.
+  wsServer.listen(8080);
 }
 
 void loop()
 {
   server.handleClient();
 
-  analogWrite(R_pin, R * 4);
-  analogWrite(G_pin, G * 4);
-  analogWrite(B_pin, B * 4);
+  server.handleClient();
 
-  yield();
+  if (wsServer.poll()) // Check if there is a new client trying to connect.
+  {
+    Serial.println("New client");
+    client = wsServer.accept();
+
+    // Setup Callbacks for the new client.
+    client.onMessage(onMessageCallback);
+    client.onEvent(onEventsCallback);
+  }
+
+  if (client.available()) // If there is a client check if it has new messages.
+  {
+    client.poll();
+  }
+  // analogWrite(R_pin, R * 4);
+  // analogWrite(G_pin, G * 4);
+  // analogWrite(B_pin, B * 4);
 }
 
-void handle_led_post()
+// Functions to handle websocket messages and events
+
+void onEventsCallback(WebsocketsEvent event, String data)
 {
-  String json = server.arg("plain");
+  switch (event)
+  {
+  case WebsocketsEvent::ConnectionOpened:
+    Serial.println("Connnection Opened");
+    break;
 
-  Serial.println(json);
-
-  DynamicJsonDocument doc(60);
-
-  deserializeJson(doc, json);
-
-  R = doc["r"];
-  G = doc["g"];
-  B = doc["b"];
-
-  server.send(202);
+  case WebsocketsEvent::ConnectionClosed:
+    Serial.println("Connnection Closed");
+    client.close();
+    break;
+  }
 }
 
-void handle_led_get()
+void onMessageCallback(WebsocketsMessage message)
 {
-  String JSON;
-  DynamicJsonDocument doc(60);
+  Serial.print("Got Message: ");
+  Serial.println(message.data());
 
-  doc["r"] = R;
-  doc["g"] = G;
-  doc["b"] = B;
+  String data = message.data();
 
-  serializeJson(doc, JSON);
+  switch (data[0]) // Parse the incoming message.
+  {
+  case 'c':
+    unmarshall_colors();
+    break;
 
-  server.send(200, "application/json", JSON);
+  case 'i':
+    client.send(marshall_colors());
+    break;
+  }
 }
+
+// Functions to handle the webserver file serving
 
 String get_content_type(String filename)
 { // Convert the file extension to the correct MIME type.
@@ -132,4 +154,31 @@ bool handle_file_read(String path)
   }
 
   return false; // If the file doesn't exist, return false.
+}
+
+void unmarshall_colors(String input)
+{
+  uint8_t index = 0;
+  uint8_t next_index = input.indexOf(",");
+
+  R = input.substring(index, next_index).toInt();
+
+  index = next_index + 1;
+  next_index = input.indexOf(",", index);
+
+  G = input.substring(index, next_index).toInt();
+
+  B = input.substring(next_index + 1).toInt();
+}
+
+String marshall_colors()
+{
+  String data = "c,";
+  data += String(R);
+  data += ",";
+  data += String(G);
+  data += ",";
+  data += String(B);
+
+  return data;
 }
