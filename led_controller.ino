@@ -3,8 +3,7 @@
 #include <ArduinoWebsockets.h>
 #include <FS.h>
 
-const char *ssid = "";      // The SSID (name) of the Wi-Fi network you want to connect to
-const char *password = "!"; // The password of the Wi-Fi network
+const char *ssid = "IoT"; // The SSID (name) of the Wi-Fi network you want to connect to
 
 using namespace websockets;
 
@@ -24,7 +23,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  WiFi.begin(ssid, password); // Connect to the network
+  WiFi.begin(ssid); // Connect to the network
 
   Serial.print("Connecting to ");
   Serial.println(ssid);
@@ -72,9 +71,6 @@ void loop()
   {
     client.poll();
   }
-  // analogWrite(R_pin, R * 4);
-  // analogWrite(G_pin, G * 4);
-  // analogWrite(B_pin, B * 4);
 }
 
 // Functions to handle websocket messages and events
@@ -104,7 +100,8 @@ void onMessageCallback(WebsocketsMessage message)
   switch (data[0]) // Parse the incoming message.
   {
   case 'c':
-    unmarshall_colors();
+    unmarshall_colors(data.substring(2));
+    update_analog();
     break;
 
   case 'i':
@@ -181,4 +178,11 @@ String marshall_colors()
   data += String(B);
 
   return data;
+}
+
+void update_analog(void)
+{
+  analogWrite(R_pin, R * 4);
+  analogWrite(G_pin, G * 4);
+  analogWrite(B_pin, B * 4);
 }
